@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test Cursors</title>
+  <script src="/socket.io/socket.io.js"></script>
+  <style>
+    .cursor {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: red;
+      border-radius: 50%;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+    }
+  </style>
+</head>
+<body style="height:100vh; cursor:none;">
+
+<script>
+  const socket = io();
+  const cursors = {}; // {socketId: element}
+
+  // Envoi position souris au serveur
+  document.addEventListener("mousemove", (e) => {
+    socket.emit("mouseMove", { x: e.clientX, y: e.clientY });
+  });
+
+  // Quand un autre utilisateur bouge sa souris
+  socket.on("mouseMove", (data) => {
+    if (!cursors[data.id]) {
+      const el = document.createElement("div");
+      el.className = "cursor";
+      el.style.background = randomColor();
+      cursors[data.id] = el;
+      document.body.appendChild(el);
+    }
+
+    cursors[data.id].style.left = data.x + "px";
+    cursors[data.id].style.top = data.y + "px";
+  });
+
+  // Quand quelqu’un se déconnecte → supprimer son curseur
+  socket.on("removeCursor", (id) => {
+    if (cursors[id]) {
+      cursors[id].remove();
+      delete cursors[id];
+    }
+  });
+
+  function randomColor() {
+    return `hsl(${Math.random()*360},100%,60%)`;
+  }
+</script>
+
+</body>
+</html>
